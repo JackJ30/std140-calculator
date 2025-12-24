@@ -7,21 +7,23 @@ version: enum {
 	std430,
 } = .std140
 
+calculated_blocks: map[rawptr]struct {
+	offsets, sizes: []int
+}
+
 main :: proc() {
 
-	values := [?]Type{ Vector{ type = .single, count = .three }, .single, Vector{ type = .single, count = .two },Vector{ type = .single, count = .two }, .single, .single, .single, .single, Vector{ type = .single, count = .four } }
+	block := Block{ Vector{ type = .single, count = .three }, .single, Vector{ type = .single, count = .two }, Vector{ type = .single, count = .two }, .single, .single, .single, .single, Vector{ type = .single, count = .four } }
+	offsets, sizes := calculate_block(block)
 
-	// calculate
-	current := 0
-	for v, i in values {
-		offset := round_up(current, get_alignment(v))
-		new_end := offset + get_advance(v)
-
-		if current < offset {
-			fmt.printfln("%v-%v: PADDING", current, offset - 1)
+	// print
+	prev_end := 0
+	for v, i in block {
+		if offsets[i] > prev_end {
+			fmt.printfln("%v-%v: PADDING", prev_end, offsets[i] - 1)
 		}
-		fmt.printfln("%v-%v: %v", offset, new_end - 1, v)
-		current = new_end
+		prev_end = offsets[i] + sizes[i]
+		fmt.printfln("%v-%v: %v", offsets[i], offsets[i] + sizes[i] - 1, v)
 	}
 }
 
@@ -154,3 +156,22 @@ get_alignment :: proc(type: Type) -> int {
 	panic("Invalid type")
 }
 
+Block :: distinct []Type
+
+calculate_block :: proc(b: Block, alloc := context.temp_allocator) -> (offsets: []int, sizes: []int) {
+	if calculated, ok := calculated_blocks[raw_data(b)]; ok {
+		return calculated.offsets, calculated.sizes
+	}
+
+	offsets = make([]int, len(b))
+	sizes = make([]int, len(b))
+	current := 0
+	for v, i in b {
+		offsets[i] = round_up(current, get_alignment(v))
+		sizes[i] = get_advance(v)
+		current = offsets[i] + sizes[i]
+	}
+
+	calculated_blocks[raw_data(b)] = { offsets, sizes }
+	return
+}
