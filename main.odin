@@ -67,7 +67,7 @@ main :: proc() {
 			case Matrix:
 				type = Array { type = t, size = array_size }
 			case Structure:
-				/* type = Array { type = t, size = array_size } */
+				type = Array { type = t, size = array_size }
 			case Array:
 				fmt.panicf("Cannot have an array of arrays on line: %v", i)
 			}

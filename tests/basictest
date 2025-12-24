@@ -1,4 +1,4 @@
-dmat3 position[5]
+vec3 position
 float rotation
 vec2 scale
 vec2 padding

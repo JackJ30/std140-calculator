@@ -76,6 +76,8 @@ get_advance :: proc(type: Type) -> int {
 			return get_alignment(v) * v.size
 		case Matrix:
 			return get_advance(get_matrix_array(t, v.size))
+		case Structure:
+			return get_advance(t) * v.size
 		}
 	case Structure:
 		calc := calculate_block(v.block)
@@ -107,6 +109,8 @@ get_alignment :: proc(type: Type) -> int {
 			return round_up_to_vec4(get_alignment(t))
 		case Matrix:
 			return get_alignment(get_matrix_array(t, v.size))
+		case Structure:
+			return get_alignment(t)
 		}
 	case Structure:
 		return round_up_to_vec4(calculate_block(v.block).greatest_alginment)
@@ -152,7 +156,7 @@ get_matrix_array :: proc(m: Matrix, num := 1) -> Array {
 }
 
 Array :: struct {
-	type: union { Scalar, Vector, Matrix },
+	type: union { Scalar, Vector, Matrix, Structure },
 	size: int,
 }
 
