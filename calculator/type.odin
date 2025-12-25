@@ -1,4 +1,5 @@
-package main
+#+private package
+package calculator
 
 Type :: union {
 	Scalar,
@@ -8,7 +9,7 @@ Type :: union {
 	Structure,
 }
 
-get_advance :: proc(type: Type) -> int {
+get_size :: proc(type: Type) -> int {
 	switch v in type {
 	case Scalar:
 		return get_scalar_size(v)
@@ -22,7 +23,7 @@ get_advance :: proc(type: Type) -> int {
 			return get_scalar_size(v.type) * 4
 		}
 	case Matrix:
-		return get_advance(get_matrix_array(v))
+		return get_size(get_matrix_array(v))
 	case Array:
 		switch t in v.type {
 		case Scalar:
@@ -30,9 +31,9 @@ get_advance :: proc(type: Type) -> int {
 		case Vector:
 			return get_alignment(v) * v.size
 		case Matrix:
-			return get_advance(get_matrix_array(t, v.size))
+			return get_size(get_matrix_array(t, v.size))
 		case Structure:
-			return get_advance(t) * v.size
+			return get_size(t) * v.size
 		}
 	case Structure:
 		calc := calculate_block(v)
@@ -134,6 +135,6 @@ round_up :: proc(val, align: int) -> int {
 }
 
 round_up_to_vec4 :: proc(val: int) -> int {
-	if version == .std430 do return val
+	if selected_version == .std430 do return val
 	else do return round_up(val, get_alignment(Vector{ type = .single, count = .four }))
 }

@@ -1,34 +1,23 @@
 #+feature dynamic-literals
-package main
+package calculator
 
-import "core:flags"
+import "core:io"
 import "core:strconv"
-import "core:strings"
 import "core:fmt"
-import os "core:os/os2"
+import "core:strings"
 
-version: enum {
+Version :: enum {
 	std140,
 	std430,
-} = .std140
+}
 
-main :: proc() {
+selected_version: Version
 
-	// parse options
-	opts: struct {
-		std140: bool `usage:"Use std140 layout (default)"`,
-		std430: bool `usage:"Use std430 layout"`, 
-	}
-	flags.parse_or_exit(&opts, os.args, .Unix)
-	if opts.std430 do version = .std430
+calculate :: proc(input: string, out: io.Writer, version: Version) {
 
-	// read from stdin
-	input, err := os.read_entire_file_from_file(os.stdin, context.temp_allocator)
-	if err != nil {
-		panic("Failed to read input")
-	}
-	lines := strings.split(string(input), "\n", context.temp_allocator)
-	
+	selected_version = version
+
+	lines := strings.split(input, "\n", context.temp_allocator)
 	blocks: [dynamic]^Block
 
 	// initial block
@@ -89,7 +78,7 @@ main :: proc() {
 			if array_start + 1 >= array_end {
 				fmt.panicf("Messed up array on line: %v", i)
 			}
-				
+			
 			// parse array size
 			array_size, ok := strconv.parse_int(second_half[array_start + 1 : array_end])
 			if !ok {
@@ -122,24 +111,25 @@ main :: proc() {
 
 		switch block.type {
 		case .Uniform:
-			fmt.printfln("Uniform %v: (size %v)", block.title, calc.total_size)
+			fmt.wprintfln(out, "Uniform %v: (size %v)", block.title, calc.total_size)
 		case .Structure:
-			fmt.printfln("Struct %v: (size %v)", block.title, get_advance(block)) // block is a valid Structure
+			fmt.wprintfln(out, "Struct %v: (size %v)", block.title, get_size(block)) // block is a valid Structure
 		}
 
 		prev_end := 0
 		for e, i in block.elements {
 			if calc.offsets[i] > prev_end {
-				fmt.printfln("%v-%v: IMPLICIT PADDING", prev_end, calc.offsets[i] - 1)
+				fmt.wprintfln(out, "%v-%v: IMPLICIT PADDING", prev_end, calc.offsets[i] - 1)
 			}
 			prev_end = calc.offsets[i] + calc.sizes[i]
-			fmt.printfln("%v-%v: %v", calc.offsets[i], calc.offsets[i] + calc.sizes[i] - 1, e.name)
+			fmt.wprintfln(out, "%v-%v: %v", calc.offsets[i], calc.offsets[i] + calc.sizes[i] - 1, e.name)
 		}
 
-		fmt.println("")
+		fmt.wprintln(out, "")
 	}
 }
 
+@(private = "package")
 type_map := map[string]Type{
 	"bool"    = .single,
 	"float"   = .single,

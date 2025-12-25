@@ -1,4 +1,5 @@
-package main
+#+private package
+package calculator
 
 import "core:math"
 
@@ -36,7 +37,7 @@ calculate_block :: proc(b: ^Block, alloc := context.temp_allocator) -> (calc: Ca
 		calc.greatest_alginment = math.max(calc.greatest_alginment, alignment)
 
 		calc.offsets[i] = round_up(current, alignment)
-		calc.sizes[i] = get_advance(e.type)
+		calc.sizes[i] = get_size(e.type)
 		current = calc.offsets[i] + calc.sizes[i]
 	}
 	calc.total_size = current

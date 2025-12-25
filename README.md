@@ -57,9 +57,8 @@ Uniform main: (size 2624)
 - [x] Parse structures
 - [x] flag for std140 vs 430
 - [x] big refactor
-- [ ] Fancy colorful output
-- [ ] More helpful array output and struct output
-- [ ] parse "storage" block with unsized array
+- [ ] Output improvements -> color, nested output, array elements
+- [ ] "storage" block with allowed unsized array at end
 
 - [ ] web version
 - [ ] blog post
