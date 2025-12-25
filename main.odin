@@ -28,46 +28,38 @@ main :: proc() {
 		panic("Failed to read input")
 	}
 	lines := strings.split(string(input), "\n", context.temp_allocator)
+	
+	blocks: [dynamic]^Block
 
-	Block_Type :: enum { Uniform, Structure, Storage }
-	Parsed_Block :: struct {
-		type: Block_Type,
-		name: string,
-		types: []Type,
-		names: []string,
-	}
-	parsed_blocks: [dynamic]Parsed_Block
+	// initial block
+	current_block: ^Block = new(Block)
+	current_block.title = "Implicit"
+	append(&blocks, current_block)
 
 	// read lines
-	type: Block_Type = .Uniform
-	name: string = "Block"
-	types: [dynamic]Type
-	names: [dynamic]string
 	for &line, i in lines {
 
 		// check if we start a new block
 		if strings.index(line, "#") != -1 {
-			// end current block
-			if len(types) > 0 {
-				append(&parsed_blocks, Parsed_Block{ type = type, name = name, types = types[:], names = names[:] })
-				if type == .Structure {
-					type_map[name] = types[:]
-				}
-			}
 
 			// start new block
-			types = make([dynamic]Type, 0)
-			names = make([dynamic]string, 0)
+			if !(len(current_block.elements) == 0 && len(blocks) == 1) {
+				current_block = new(Block)
+				append(&blocks, current_block)
+			}
+
+			// get title
+			current_block.title = line[strings.index(line, " ") + 1:]
+
+			// get type
 			if strings.index(line, "#struct") != -1 {
-				type = .Structure
+				current_block.type = .Structure
+				type_map[current_block.title] = current_block
 			} else if strings.index(line, "#uniform") != -1 {
-				type = .Uniform
-			} else if strings.index(line, "#storage") != -1 {
-				type = .Storage
+				current_block.type = .Uniform
 			} else {
 				fmt.panicf("Bad new block directive at line: %v", i)
 			}
-			name = line[strings.index(line, " ") + 1:]
 
 			continue
 		}
@@ -121,29 +113,27 @@ main :: proc() {
 			fmt.panicf("Unbalanced array on line: %v", i)
 		}
 
-		append(&types, type)
-		append(&names, line)
+		append(&current_block.elements, Block_Element{ name = line, type = type })
 	}
-	// end current block
-	if len(types) > 0 {
-		append(&parsed_blocks, Parsed_Block{ type = type, name = name, types = types[:], names = names[:] })
-		if type == .Structure {
-			type_map[name] = types[:]
+
+	for block in blocks {
+
+		calc := calculate_block(block)
+
+		switch block.type {
+		case .Uniform:
+			fmt.printfln("Uniform %v: (size %v)", block.title, calc.total_size)
+		case .Structure:
+			fmt.printfln("Struct %v: (size %v)", block.title, get_advance(block)) // block is a valid Structure
 		}
-	}
-
-	for &parsed in parsed_blocks {
-		calc := calculate_block(parsed.types)
-
-		fmt.printfln("%v %v: (size %v)", parsed.type, parsed.name, calc.total_size)
 
 		prev_end := 0
-		for _, i in parsed.types {
+		for e, i in block.elements {
 			if calc.offsets[i] > prev_end {
-				fmt.printfln("%v-%v: PADDING", prev_end, calc.offsets[i] - 1)
+				fmt.printfln("%v-%v: IMPLICIT PADDING", prev_end, calc.offsets[i] - 1)
 			}
 			prev_end = calc.offsets[i] + calc.sizes[i]
-			fmt.printfln("%v-%v: %v", calc.offsets[i], calc.offsets[i] + calc.sizes[i] - 1, parsed.names[i])
+			fmt.printfln("%v-%v: %v", calc.offsets[i], calc.offsets[i] + calc.sizes[i] - 1, e.name)
 		}
 
 		fmt.println("")

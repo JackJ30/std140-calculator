@@ -1,48 +1,5 @@
 package main
 
-import "core:math"
-
-Calculated_Block :: struct {
-	offsets, sizes: []int,
-	greatest_alginment, total_size: int,
-}
-calculated_blocks: map[rawptr]Calculated_Block
-
-calculate_block :: proc(b: []Type, alloc := context.temp_allocator) -> (calc: Calculated_Block) {
-	if calculated, ok := calculated_blocks[raw_data(b)]; ok {
-		return calculated
-	}
-
-	calc.offsets = make([]int, len(b))
-	calc.sizes = make([]int, len(b))
-	current := 0
-	for v, i in b {
-		alignment := get_alignment(v)
-		calc.greatest_alginment = math.max(calc.greatest_alginment, alignment)
-
-		calc.offsets[i] = round_up(current, alignment)
-		calc.sizes[i] = get_advance(v)
-		current = calc.offsets[i] + calc.sizes[i]
-	}
-	calc.total_size = current
-
-	calculated_blocks[raw_data(b)] = calc
-	return
-}
-
-// UTIL
-round_up :: proc(val, align: int) -> int {
-	assert(val >= 0)
-	if val == 0 do return 0
-	return (((val - 1) / align) + 1) * align
-}
-
-round_up_to_vec4 :: proc(val: int) -> int {
-	if version == .std430 do return val
-	else do return round_up(val, get_alignment(Vector{ type = .single, count = .four }))
-}
-
-// TYPE
 Type :: union {
 	Scalar,
 	Vector,
@@ -116,7 +73,7 @@ get_alignment :: proc(type: Type) -> int {
 	panic("Invalid type")
 }
 
-// TYPES
+// SCALAR
 
 Scalar :: enum {
 	single,
@@ -133,29 +90,50 @@ get_scalar_size :: proc(b: Scalar) -> int {
 	panic("Invalid base type")
 }
 
-Count :: enum {
-	two = 2,
-	three = 3,
-	four = 4,
-}
+// VECTOR
 
 Vector :: struct {
 	type: Scalar,
 	count: Count
 }
 
+Count :: enum {
+	two = 2,
+	three = 3,
+	four = 4,
+}
+
+// MATRIX
+
 Matrix :: struct {
 	major, minor : Count,
 	type: Scalar,
 }
 
+
 get_matrix_array :: proc(m: Matrix, num := 1) -> Array {
 	return Array{size = cast(int)m.major * num, type = Vector{ type = m.type, count = m.minor }}
 }
+
+// ARRAY
 
 Array :: struct {
 	type: union { Scalar, Vector, Matrix, Structure },
 	size: int,
 }
 
-Structure :: []Type
+// STRUCTURE
+
+Structure :: ^Block
+
+// UTIL
+round_up :: proc(val, align: int) -> int {
+	assert(val >= 0)
+	if val == 0 do return 0
+	return (((val - 1) / align) + 1) * align
+}
+
+round_up_to_vec4 :: proc(val: int) -> int {
+	if version == .std430 do return val
+	else do return round_up(val, get_alignment(Vector{ type = .single, count = .four }))
+}

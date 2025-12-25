@@ -1,0 +1,5 @@
+#struct test
+float one
+
+#uniform main
+test test
