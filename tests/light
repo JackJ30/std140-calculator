@@ -1,0 +1,8 @@
+#structure light
+vec4 position
+float strength
+float parameters[3]
+
+#uniform main
+mat4 view
+light lights[32]
