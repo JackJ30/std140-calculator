@@ -27,7 +27,7 @@ parse_and_calculate :: proc(input: string, out: io.Writer, err: io.Writer, versi
 
 	// read lines
 	has_error := false
-	for &line, i in lines {
+	line_loop: for &line, i in lines {
 
 		// check if we start a new block
 		if strings.index(line, "#") != -1 {
@@ -43,7 +43,7 @@ parse_and_calculate :: proc(input: string, out: io.Writer, err: io.Writer, versi
 			if space_idx == -1 {
 				fmt.wprintfln(err, "Bad new block directive at line: %v", i)
 				has_error = true
-				continue
+				continue line_loop
 			}
 			current_block.title = line[space_idx + 1:]
 
@@ -56,10 +56,10 @@ parse_and_calculate :: proc(input: string, out: io.Writer, err: io.Writer, versi
 			} else {
 				fmt.wprintfln(err, "Bad new block directive at line: %v", i)
 				has_error = true
-				continue
+				continue line_loop
 			}
 
-			continue
+			continue line_loop
 		}
 
 		// discard after semicolon
@@ -68,11 +68,11 @@ parse_and_calculate :: proc(input: string, out: io.Writer, err: io.Writer, versi
 
 		// get fields
 		fields := strings.fields(line, context.temp_allocator)
-		if len(fields) == 0 do continue
+		if len(fields) == 0 do continue line_loop
 		else if len(fields) != 2 {
 			fmt.wprintfln(err, "Wrong number of fields on line: %v", i)
 			has_error = true
-			continue
+			continue line_loop
 		}
 
 		// parse first half
@@ -80,6 +80,7 @@ parse_and_calculate :: proc(input: string, out: io.Writer, err: io.Writer, versi
 		if !ok {
 			fmt.wprintfln(err, "Unknown type '%v' on line: %v", fields[0], i)
 			has_error = true
+			continue line_loop
 		}
 
 		// parse second half
@@ -92,7 +93,7 @@ parse_and_calculate :: proc(input: string, out: io.Writer, err: io.Writer, versi
 			if array_start + 1 >= array_end {
 				fmt.wprintfln(err, "Messed up array on line: %v", i)
 				has_error = true
-				continue
+				continue line_loop
 			}
 			
 			// parse array size
@@ -100,7 +101,7 @@ parse_and_calculate :: proc(input: string, out: io.Writer, err: io.Writer, versi
 			if !ok {
 				fmt.wprintfln(err, "Invalid array size on line: %v", i)
 				has_error = true
-				continue
+				continue line_loop
 			}
 
 			// make array based on type
@@ -116,12 +117,12 @@ parse_and_calculate :: proc(input: string, out: io.Writer, err: io.Writer, versi
 			case Array:
 				fmt.wprintfln(err, "Cannot have an array of arrays on line: %v", i)
 				has_error = true
-				continue
+				continue line_loop
 			}
 		} else if array_start != -1 || array_end != -1 {
 			fmt.wprintfln(err, "Unbalanced array on line: %v", i)
 			has_error = true
-			continue
+			continue line_loop
 		}
 
 		append(&current_block.elements, Block_Element{ name = line, type = type })

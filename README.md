@@ -58,14 +58,13 @@ Uniform main: (size 2624)
 - [x] flag for std140 vs 430
 - [x] big refactor
 - [x] display errors and struct end padding
-- [ ] don't leak memory
-- [ ] switch to blocks defined by double newline
-- [ ] Output improvements -> color, nested output, array elements
+- [ ] don't leak memory and don't persist structs
+- [ ] switch to blocks defined by double newline, and error if no data
+- [ ] Output improvements (color, nested output, array elements)
 - [ ] "storage" block with allowed unsized array at end
 
 - [x] web version
 - [x] improve web version (automatically run)
-- [ ] add examples
 - [ ] add web version to my site
 - [ ] blog post
 
