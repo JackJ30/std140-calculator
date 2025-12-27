@@ -19,6 +19,6 @@ main :: proc() {
 		panic("Failed to read input")
 	}
 
-	calc.calculate(string(input), os.to_stream(os.stdout), opts.std430 ? .std430 : .std140)
+	calc.parse_and_calculate(string(input), os.to_stream(os.stdout), os.to_stream(os.stderr), opts.std430 ? .std430 : .std140)
 }
 

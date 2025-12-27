@@ -31,9 +31,13 @@ alloc_input :: proc "contextless" (size: int) -> rawptr {
 calculate :: proc "contextless" (version: i32) {
 	context = runtime.default_context()
 
-	builder := strings.builder_make(context.allocator)
-	calculator.calculate(input_string, strings.to_stream(&builder), version == 0 ? .std140 : .std430)
-	output_string = strings.to_string(builder)
+	out_string_builder := strings.builder_make(context.allocator)
+	err_string_builder := strings.builder_make(context.allocator)
+	if calculator.parse_and_calculate(input_string, strings.to_stream(&out_string_builder), strings.to_stream(&err_string_builder), version == 0 ? .std140 : .std430) {
+		output_string = strings.to_string(out_string_builder)
+	} else {
+		output_string = strings.to_string(err_string_builder)
+	}
 }
 
 @(export)

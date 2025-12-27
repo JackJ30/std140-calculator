@@ -13,7 +13,7 @@ Version :: enum {
 
 selected_version: Version
 
-calculate :: proc(input: string, out: io.Writer, version: Version) {
+parse_and_calculate :: proc(input: string, out: io.Writer, err: io.Writer, version: Version) -> bool {
 
 	selected_version = version
 
@@ -26,6 +26,7 @@ calculate :: proc(input: string, out: io.Writer, version: Version) {
 	append(&blocks, current_block)
 
 	// read lines
+	has_error := false
 	for &line, i in lines {
 
 		// check if we start a new block
@@ -39,7 +40,11 @@ calculate :: proc(input: string, out: io.Writer, version: Version) {
 
 			// get title
 			space_idx := strings.index(line, " ")
-			if space_idx == -1 do fmt.panicf("Bad new block directive at line: %v", i)
+			if space_idx == -1 {
+				fmt.wprintfln(err, "Bad new block directive at line: %v", i)
+				has_error = true
+				continue
+			}
 			current_block.title = line[space_idx + 1:]
 
 			// get type
@@ -49,7 +54,9 @@ calculate :: proc(input: string, out: io.Writer, version: Version) {
 			} else if strings.index(line, "#uniform") != -1 {
 				current_block.type = .Uniform
 			} else {
-				fmt.panicf("Bad new block directive at line: %v", i)
+				fmt.wprintfln(err, "Bad new block directive at line: %v", i)
+				has_error = true
+				continue
 			}
 
 			continue
@@ -62,12 +69,17 @@ calculate :: proc(input: string, out: io.Writer, version: Version) {
 		// get fields
 		fields := strings.fields(line, context.temp_allocator)
 		if len(fields) == 0 do continue
-		else if len(fields) != 2 do fmt.panicf("Wrong number of fields on line: %v", i)
+		else if len(fields) != 2 {
+			fmt.wprintfln(err, "Wrong number of fields on line: %v", i)
+			has_error = true
+			continue
+		}
 
 		// parse first half
 		type, ok := type_map[fields[0]]
 		if !ok {
-			fmt.panicf("Unknown type '%v' on line: %v", fields[0], i)
+			fmt.wprintfln(err, "Unknown type '%v' on line: %v", fields[0], i)
+			has_error = true
 		}
 
 		// parse second half
@@ -78,13 +90,17 @@ calculate :: proc(input: string, out: io.Writer, version: Version) {
 		array_end := strings.index(second_half, "]")
 		if array_start != -1 && array_end != -1 {
 			if array_start + 1 >= array_end {
-				fmt.panicf("Messed up array on line: %v", i)
+				fmt.wprintfln(err, "Messed up array on line: %v", i)
+				has_error = true
+				continue
 			}
 			
 			// parse array size
 			array_size, ok := strconv.parse_int(second_half[array_start + 1 : array_end])
 			if !ok {
-				fmt.panicf("Invalid array size on line: %v", i)
+				fmt.wprintfln(err, "Invalid array size on line: %v", i)
+				has_error = true
+				continue
 			}
 
 			// make array based on type
@@ -98,14 +114,20 @@ calculate :: proc(input: string, out: io.Writer, version: Version) {
 			case Structure:
 				type = Array { type = t, size = array_size }
 			case Array:
-				fmt.panicf("Cannot have an array of arrays on line: %v", i)
+				fmt.wprintfln(err, "Cannot have an array of arrays on line: %v", i)
+				has_error = true
+				continue
 			}
 		} else if array_start != -1 || array_end != -1 {
-			fmt.panicf("Unbalanced array on line: %v", i)
+			fmt.wprintfln(err, "Unbalanced array on line: %v", i)
+			has_error = true
+			continue
 		}
 
 		append(&current_block.elements, Block_Element{ name = line, type = type })
 	}
+
+	if has_error do return false
 
 	// Send output
 	for block in blocks {
@@ -137,6 +159,8 @@ calculate :: proc(input: string, out: io.Writer, version: Version) {
 
 		fmt.wprintln(out, "")
 	}
+
+	return true
 }
 
 @(private = "package")

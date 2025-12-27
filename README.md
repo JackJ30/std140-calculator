@@ -57,13 +57,15 @@ Uniform main: (size 2624)
 - [x] Parse structures
 - [x] flag for std140 vs 430
 - [x] big refactor
-- [ ] display errors and struct end padding
+- [x] display errors and struct end padding
+- [ ] don't leak memory
 - [ ] switch to blocks defined by double newline
 - [ ] Output improvements -> color, nested output, array elements
 - [ ] "storage" block with allowed unsized array at end
 
 - [x] web version
 - [x] improve web version (automatically run)
+- [ ] add examples
 - [ ] add web version to my site
 - [ ] blog post
 
