@@ -23,12 +23,7 @@ Calculated_Block :: struct {
 	offsets, sizes: []int,
 	greatest_alginment, total_size: int,
 }
-calculated_blocks: map[^Block]Calculated_Block
 calculate_block :: proc(b: ^Block, alloc := context.temp_allocator) -> (calc: Calculated_Block) {
-	if calculated, ok := calculated_blocks[b]; ok {
-		return calculated
-	}
-
 	calc.offsets = make([]int, len(b.elements))
 	calc.sizes = make([]int, len(b.elements))
 	current := 0
@@ -42,6 +37,5 @@ calculate_block :: proc(b: ^Block, alloc := context.temp_allocator) -> (calc: Ca
 	}
 	calc.total_size = current
 
-	calculated_blocks[b] = calc
 	return
 }

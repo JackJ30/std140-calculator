@@ -25,32 +25,6 @@ float parameters[3]
 mat4 view
 light lights[32]
 ```
-
-## Example Output
-```
-Uniform Implicit: (size 64)
-0-11: vec3 position
-12-15: float rotation
-16-23: vec2 scale
-24-27: float texu
-28-31: float texv
-32-35: float texw
-36-39: float texh
-40-47: IMPLICIT PADDING
-48-63: vec4 color
-```
-or
-```
-Struct light: (size 80)
-0-15: vec4 position
-16-19: float strength
-20-31: IMPLICIT PADDING
-32-79: float parameters[3]
-
-Uniform main: (size 2624)
-0-63: mat4 view
-64-2623: light lights[32]
-```
 ## TODO
 - [x] Input
 - [x] Array of structs
@@ -58,10 +32,10 @@ Uniform main: (size 2624)
 - [x] flag for std140 vs 430
 - [x] big refactor
 - [x] display errors and struct end padding
-- [ ] don't leak memory and don't persist structs
-- [ ] switch to blocks defined by double newline, and error if no data
-- [ ] Output improvements (color, nested output, array elements)
+- [x] don't leak memory and don't persist structs
+- [ ] Output improvements (color, nested outputs, array elements)
 - [ ] "storage" block with allowed unsized array at end
+- [ ] switch to blocks defined by double newline, and error if no data instead of probably breaking
 
 - [x] web version
 - [x] improve web version (automatically run)

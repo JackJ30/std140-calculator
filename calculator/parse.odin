@@ -25,6 +25,9 @@ parse_and_calculate :: proc(input: string, out: io.Writer, err: io.Writer, versi
 	current_block.title = ""
 	append(&blocks, current_block)
 
+	// custom types
+	custom_type_map := make(map[string]Type)
+
 	// read lines
 	has_error := false
 	line_loop: for &line, i in lines {
@@ -50,7 +53,7 @@ parse_and_calculate :: proc(input: string, out: io.Writer, err: io.Writer, versi
 			// get type
 			if strings.index(line, "#struct") != -1 {
 				current_block.type = .Structure
-				type_map[current_block.title] = current_block
+				custom_type_map[current_block.title] = current_block
 			} else if strings.index(line, "#uniform") != -1 {
 				current_block.type = .Uniform
 			} else {
@@ -78,9 +81,12 @@ parse_and_calculate :: proc(input: string, out: io.Writer, err: io.Writer, versi
 		// parse first half
 		type, ok := type_map[fields[0]]
 		if !ok {
-			fmt.wprintfln(err, "Unknown type '%v' on line: %v", fields[0], i)
-			has_error = true
-			continue line_loop
+			type, ok = custom_type_map[fields[0]]
+			if !ok {
+				fmt.wprintfln(err, "Unknown type '%v' on line: %v", fields[0], i)
+				has_error = true
+				continue line_loop
+			}
 		}
 
 		// parse second half
